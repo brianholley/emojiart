@@ -1,0 +1,15 @@
+{
+  "name": "emojiart",
+  "version": "1.0.0",
+  "description": "Emoji mosaic pictures twitterbot",
+  "main": "index.js",
+  "start": "index.js",
+  "author": "brian.holley@hotmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "imagemagick-native": "^1.9.3",
+    "rgb-to-hsl": "0.0.3",
+    "twit": "^2.2.5",
+    "use-strict": "^1.0.1"
+  }
+}
