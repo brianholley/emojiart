@@ -50,37 +50,26 @@ function generateColorTable(folder) {
     var files = fs.readdirSync(folder)
     for (var file of files) {
         var source = folder + '/' + file
-        colors[file] = reduceImageToColor(source)
+        colors[source] = reduceImageToColor(source)
     }
     return colors
 }
 
-function write1x1Thumbnails(folder, destFolder) {
-    var files = fs.readdirSync(folder)
-    for (var file of files) {
-        var source = folder + '/' + file
-        var dest = destFolder + '/' + file
-        console.log(source + " => " + dest)
-
-        fs.writeFileSync(dest, 
-            imagemagick.convert({
-                srcData: fs.readFileSync(source),
-                width: 1,
-                height: 1,
-                resizeStyle: 'fill', 
-                gravity: 'Center',
-                format: 'PNG32'
-        }))
+function main() {
+    if (process.argv.length < 4) {
+        console.log("Usage: InputImage OutputImage")
+        return
     }
+
+    var colorTableFile = './emojis/colors.json' 
+    if (!fs.existsSync(colorTableFile)) {
+        console.log("Generating color table")
+        var colors = generateColorTable('./emojis/e1-png/png_512')
+        fs.writeFileSync(colorTableFile, JSON.stringify(colors))
+    }
+
+    var colorTable = JSON.parse(fs.readFileSync(colorTableFile))
+    mosaic.generateMosaic(fs.readFileSync(process.argv[2]), process.argv[3], colorTable)
 }
 
-var colorTableFile = './emojis/colors.json' 
-if (!fs.existsSync(colorTableFile)) {
-    console.log("Generating color table")
-    var colors = generateColorTable('./emojis/e1-png/png_512')
-    fs.writeFileSync(colorTableFile, JSON.stringify(colors))
-}
-
-var colorTable = JSON.parse(fs.readFileSync(colorTableFile))
-
-mosaic.generateMosaic(fs.readFileSync('./test/color/simple.png'), './mosaic.png', colorTable)
+main()

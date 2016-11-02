@@ -9,53 +9,7 @@ function normalize(value, alpha) {
     return Math.floor(value / maxColorValue * 255 * (1.0 - (alpha / maxColorValue)))
 }
 
-function findTileForPixel(rgb, hslTable) {
-    var hsl = rgbToHsl(rgb.red, rgb.green, rgb.blue)
-    var hue = Math.floor(hsl[0])
-    var sat = parseFloat(hsl[1].substring(0, hsl[1].length-1)) / 100
-    var lum = parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100
-    console.log("Target pixel h: " + hue + ", s: " + sat + ", l: " + lum)
-    
-    for (var i=0; i < 20; i++) {
-        if ((hue + i) in hslTable) {
-            var best = hslTable[(hue + i)][0]
-            var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
-            for (var opt of hslTable[(hue + i)].slice(1)) {
-                console.log("\tTrying : " + JSON.stringify(opt))
-                var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
-                if (d < delta) {
-                    best = opt
-                    delta = d
-                }
-            }
-            if (delta < (i * 0.05)) {
-                return best.file
-            }
-        }
-        if ((hue - i) in hslTable) {
-            var best = hslTable[(hue - i)][0]
-            var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
-            for (var opt of hslTable[(hue - i)].slice(1)) {
-                console.log("\tTrying : " + JSON.stringify(opt))
-                var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
-                if (d < delta) {
-                    best = opt
-                    delta = d
-                }
-            }
-            if (delta < (i * 0.05)) {
-                return best.file
-            }
-        }
-    }
-    throw new Exception()
-}
-
-function generateMosaic(source, dest, colorTable, options) {
-
-    var emojiSize = (options !== undefined && "size" in options ? options.size : 32)
-    
-    console.log("Generating hsl table")
+function colorTableToHslTable(colorTable) {
     var hslTable = {}
     for (var file in colorTable) {
         var c = colorTable[file]
@@ -71,17 +25,100 @@ function generateMosaic(source, dest, colorTable, options) {
             file: file
         }]
     }
+    return hslTable
+}
 
-    var identity = imagemagick.identify({
-        srcData: source
-    })
+function findTileForPixel(rgb, hslTable) {
+    var hsl = rgbToHsl(rgb.red, rgb.green, rgb.blue)
+    var hue = Math.floor(hsl[0])
+    var sat = parseFloat(hsl[1].substring(0, hsl[1].length-1)) / 100
+    var lum = parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100
+    //console.log("Target pixel h: " + hue + ", s: " + sat + ", l: " + lum)
+    
+    for (var i=0; i < 20; i++) {
+        if ((hue + i) in hslTable) {
+            var best = hslTable[(hue + i)][0]
+            var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
+            for (var opt of hslTable[(hue + i)].slice(1)) {
+                //console.log("\tTrying : " + JSON.stringify(opt))
+                var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
+                if (d < delta) {
+                    best = opt
+                    delta = d
+                }
+            }
+            if (delta < (i * 0.05)) {
+                return best.file
+            }
+        }
+        if ((hue - i) in hslTable) {
+            var best = hslTable[(hue - i)][0]
+            var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
+            for (var opt of hslTable[(hue - i)].slice(1)) {
+                //console.log("\tTrying : " + JSON.stringify(opt))
+                var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
+                if (d < delta) {
+                    best = opt
+                    delta = d
+                }
+            }
+            if (delta < (i * 0.05)) {
+                return best.file
+            }
+        }
+    }
+    throw new Exception()
+}
 
-    console.log("Image is " + identity.width + " x " + identity.height)
+function assemble(columns, emojis, emojiSize, destFile) {
+    var convertCmd = []
+    for (var p=0; p < emojis.length; p++) {
+        var c = p % columns
+        var r = Math.floor(p / columns)
 
-    var columns = Math.floor(identity.width / emojiSize)
-    var rows = Math.floor(identity.width / emojiSize)
+        var filename = emojis[p].substring(emojis[p].lastIndexOf('/'))
+        var tempFile = './temp/' + filename
+        if (!fs.existsSync(tempFile)) {
+            fs.writeFileSync(tempFile, imagemagick.convert({
+                srcData: fs.readFileSync(emojis[p]),
+                width: emojiSize,
+                height: emojiSize,
+                resizeStyle: 'fill', 
+                gravity: 'Center'
+            }))
+        }
 
-    console.log("Generating " + columns + " x " + rows + " mosaic")
+        var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
+        convertCmd = [...convertCmd, '-page', offset, tempFile]
+    }
+
+    convertCmd = [...convertCmd, '-background', 'white', '-layers', 'mosaic', destFile]
+    //console.log(JSON.stringify(convertCmd))
+    im.convert(convertCmd)
+}
+
+function generateMosaic(source, dest, colorTable, options) {
+
+    var emojiSize = (options !== undefined && "size" in options ? options.size : 32)
+    var maxMosaicSize = (options !== undefined && "maxMosaicSize" in options ? options.maxMosaicSize : 400)
+    
+    var hslTable = colorTableToHslTable(colorTable)
+
+    var identity = imagemagick.identify({ srcData: source })
+    var columns = Math.ceil(identity.width / emojiSize)
+    var rows = Math.ceil(identity.height / emojiSize)
+
+    console.log("Mosaic size: " + columns + "x" + rows)
+    if (columns > rows && columns > maxMosaicSize) {
+        columns = maxMosaicSize
+        rows = Math.floor(identity.height / identity.width * columns)
+        console.log("Snapped to " + columns + "x" + rows)
+    }
+    else if (rows > columns && rows > maxMosaicSize) {
+        rows = maxMosaicSize
+        columns = Math.floor(identity.width / identity.height * rows)
+        console.log("Snapped to " + columns + "x" + rows)
+    }
 
     var resized = imagemagick.convert({
         srcData: source,
@@ -105,19 +142,23 @@ function generateMosaic(source, dest, colorTable, options) {
             green: normalize(p.green, p.opacity),
             blue: normalize(p.blue, p.opacity)
         }
-        console.log("Target pixel rgb: " + JSON.stringify(rgb))
+        //console.log("Target pixel rgb: " + JSON.stringify(rgb))
         emojis.push(findTileForPixel(rgb, hslTable))
     }
 
-    console.log("Matched source to emojis")
+    if (emojis.length != rows * columns) {
+        throw ("Error: " + emojis.length + " != " + rows + " x " + columns)
+    }
 
     var convertCmd = []
     for (var p=0; p < emojis.length; p++) {
         var c = p % columns
         var r = Math.floor(p / columns)
 
-        fs.writeFileSync('./temp/' + emojis[p], imagemagick.convert({
-            srcData: fs.readFileSync('./emojis/e1-png/png_512/' + emojis[p]),
+        var filename = emojis[p].substring(emojis[p].lastIndexOf('/'))
+        var tempFile = './temp/' + filename
+        fs.writeFileSync(tempFile, imagemagick.convert({
+            srcData: fs.readFileSync(emojis[p]),
             width: emojiSize,
             height: emojiSize,
             resizeStyle: 'fill', 
@@ -125,13 +166,11 @@ function generateMosaic(source, dest, colorTable, options) {
         }))
 
         var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
-        convertCmd = [...convertCmd, '-page', offset, './temp/' + emojis[p]]
+        convertCmd = [...convertCmd, '-page', offset, tempFile]
     }
 
     convertCmd = [...convertCmd, '-background', 'white', '-layers', 'mosaic', dest]
-    console.log(JSON.stringify(convertCmd))
+    //console.log(JSON.stringify(convertCmd))
     im.convert(convertCmd)
-
-    console.log("Finished")
 }
 exports.generateMosaic = generateMosaic
