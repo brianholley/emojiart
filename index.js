@@ -1,12 +1,14 @@
 var fs = require('fs')
 var imagemagick = require('imagemagick-native')
+var rgbToHsl = require('rgb-to-hsl')
 require('use-strict')
 
 var mosaic = require('./mosaic.js')
 
 var depth = imagemagick.quantumDepth()
+var maxColorValue = (1 << depth) - 1;
 function normalize(value, alpha) {
-    return Math.floor((value / (1 << depth)) * 256 * (alpha / (1 << depth)))
+    return Math.floor(value / maxColorValue * 255 * (1.0 - (alpha / maxColorValue)))
 }
 
 function reduceImageToColor(imageFile) {
@@ -16,7 +18,7 @@ function reduceImageToColor(imageFile) {
         height: 1,
         resizeStyle: 'fill', 
         gravity: 'Center',
-        format: 'PNG32'
+        format: 'PNG24'
     }) 
     // Consider quantizeColors to reduce colors to smaller set
     var pixel = imagemagick.getConstPixels({
@@ -26,12 +28,21 @@ function reduceImageToColor(imageFile) {
         rows: 1,
         columns: 1
     })[0]
-    var normalizedRgb = {
+    var rgb = {
         red: normalize(pixel.red, pixel.opacity),
         green: normalize(pixel.green, pixel.opacity),
         blue: normalize(pixel.blue, pixel.opacity)
     }
-    return normalizedRgb
+    var hsl = rgbToHsl(rgb.red, rgb.green, rgb.blue)
+
+    return {
+        red: rgb.red,
+        green: rgb.green,
+        blue: rgb.blue,
+        hue: Math.floor(hsl[0]),
+        sat: parseFloat(hsl[1].substring(0, hsl[1].length-1)) / 100,
+        lum: parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100,
+    }
 }
 
 function generateColorTable(folder) {
@@ -64,11 +75,12 @@ function write1x1Thumbnails(folder, destFolder) {
 }
 
 var colorTableFile = './emojis/colors.json' 
-if (!fs.exists(colorTableFile)) {
+if (!fs.existsSync(colorTableFile)) {
+    console.log("Generating color table")
     var colors = generateColorTable('./emojis/e1-png/png_512')
     fs.writeFileSync(colorTableFile, JSON.stringify(colors))
 }
 
 var colorTable = JSON.parse(fs.readFileSync(colorTableFile))
 
-mosaic.generateMosaic('./tests/color/landscape.jpg', {}, colorTable)
+mosaic.generateMosaic(fs.readFileSync('./test/color/simple.png'), './mosaic.png', colorTable)
