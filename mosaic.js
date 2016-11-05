@@ -178,16 +178,16 @@ function generateMosaic(source, dest, colorTable, options) {
     const tileSize = 10
 
     var cmd = [] 
-    var ctiles = Math.ceil(columns / 10) 
-    var rtiles = Math.ceil(rows / 10)
+    var ctiles = Math.ceil(columns / tileSize) 
+    var rtiles = Math.ceil(rows / tileSize)
     console.log("Tile size: " + ctiles + "x" + rtiles)
     var tilesFinished = 0 
     for (var r=0; r < rtiles; r++) {
         for (var c=0; c < ctiles; c++) {
-            var tileBase = c * 10 + r * 10 * columns
+            var tileBase = c * tileSize + r * tileSize * columns
             var tileName = './temp/tile_' + c + '_' + r + '.png'
-            var tileW = (c < ctiles - 1 ? 10 : columns - c * 10) 
-            var tileH = (r < rtiles - 1 ? 10 : rows - r * 10)
+            var tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
+            var tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
             renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName, (err, md) => {
                 if (err) throw err
                 tilesFinished++
@@ -199,7 +199,7 @@ function generateMosaic(source, dest, colorTable, options) {
             })
             console.log("Tile: " + c + "," + r)
 
-            var offset = '+' + (10 * emojiSize * c) + '+' + (10 * emojiSize * r)
+            var offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
             cmd = [...cmd, '-page', offset, tileName]
         }
     }
