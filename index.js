@@ -45,12 +45,22 @@ function reduceImageToColor(imageFile) {
     }
 }
 
-function generateColorTable(folder) {
+function generateColorTable(folder, cacheBase, emojiSize) {
     var colors = {}
     var files = fs.readdirSync(folder)
     for (var file of files) {
         var source = folder + '/' + file
-        colors[source] = reduceImageToColor(source)
+        var resized = cacheBase + '/' + file
+
+        fs.writeFileSync(resized, imagemagick.convert({
+            srcData: fs.readFileSync(source),
+            width: emojiSize,
+            height: emojiSize,
+            resizeStyle: 'fill', 
+            gravity: 'Center'
+        }))
+
+        colors[resized] = reduceImageToColor(source)
     }
     return colors
 }
@@ -61,15 +71,23 @@ function main() {
         return
     }
 
-    var colorTableFile = './emojis/colors.json' 
+    const emojiSize = 16
+
+    if (!fs.existsSync('./cache')) {
+        fs.mkdirSync('./cache')
+    }
+
+    var colorTableFile = './cache/colors.json' 
     if (!fs.existsSync(colorTableFile)) {
         console.log("Generating color table")
-        var colors = generateColorTable('./emojis/e1-png/png_512')
+        var colors = generateColorTable('./emojis/e1-png/png_512', './cache', emojiSize)
         fs.writeFileSync(colorTableFile, JSON.stringify(colors))
     }
 
     var colorTable = JSON.parse(fs.readFileSync(colorTableFile))
-    mosaic.generateMosaic(fs.readFileSync(process.argv[2]), process.argv[3], colorTable)
+    mosaic.generateMosaic(fs.readFileSync(process.argv[2]), process.argv[3], colorTable, {
+        emojiSize: emojiSize
+    })
 }
 
 main()
