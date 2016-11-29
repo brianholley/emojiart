@@ -65,12 +65,7 @@ function generateColorTable(folder, cacheBase, emojiSize) {
     return colors
 }
 
-function main() {
-    if (process.argv.length < 4) {
-        console.log("Usage: InputImage OutputImage")
-        return
-    }
-
+function main(input, output) {
     const emojiSize = 16
 
     if (!fs.existsSync('./cache')) {
@@ -85,9 +80,14 @@ function main() {
     }
 
     var colorTable = JSON.parse(fs.readFileSync(colorTableFile))
-    mosaic.generateMosaic(fs.readFileSync(process.argv[2]), process.argv[3], colorTable, {
+    mosaic.generateMosaic(fs.readFileSync(input), output, colorTable, {
         emojiSize: emojiSize
     })
 }
 
-main()
+if (process.argv.length < 4) {
+    console.log("Usage: InputImage OutputImage")
+    return
+}
+
+main(process.argv[2], process.argv[3])
