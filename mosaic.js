@@ -36,7 +36,7 @@ function findTileForPixel(rgb, hslTable) {
     var lum = parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100
     //console.log("Target pixel h: " + hue + ", s: " + sat + ", l: " + lum)
     
-    for (var i=0; i < 20; i++) {
+    for (var i=0; i < 30; i++) {
         if ((hue + i) in hslTable) {
             var best = hslTable[(hue + i)][0]
             var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
@@ -68,7 +68,7 @@ function findTileForPixel(rgb, hslTable) {
             }
         }
     }
-    throw new Exception()
+    throw new Error('Could not find color match for RGB ' + JSON.stringify(rgb))
 }
 
 // function assemble(columns, emojis, emojiSize, destFile) {
