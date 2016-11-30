@@ -1,20 +1,16 @@
-var HttpUtils = require('./httputils')
+var rp = require('request-promise-native')
 
 function imageOfTheDay(apiKey) {
-    return new Promise((resolve, reject) => {
-        let url = 'https://api.nasa.gov/planetary/apod?api_key=' + apiKey
-        HttpUtils.getJson(
-            url, 
-            (image) => {
-                let imageUrl = image.url
-                let altText = image.title
-                HttpUtils.getBinary(imageUrl, (data) => {
-                    resolve({
-                        imageUrl: imageUrl, 
-                        imageData: data, 
-                        altText: altText
-                    })
-                })
+    let url = 'https://api.nasa.gov/planetary/apod'
+    return rp({uri: url, qs: { api_key: apiKey }, json: true}).then((info) => {
+        let imageUrl = info.url
+        let altText = info.title
+        return rp({uri: imageUrl, encoding: null}).then((data) => {
+            return {
+                imageUrl: imageUrl, 
+                imageData: data, 
+                altText: altText
+            }
         })
     })
 }

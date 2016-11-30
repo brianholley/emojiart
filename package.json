@@ -10,6 +10,7 @@
     "imagemagick": "^0.1.3",
     "imagemagick-native": "^1.9.3",
     "node-uuid": "^1.4.7",
+    "request-promise-native": "^1.0.3",
     "rgb-to-hsl": "0.0.3",
     "twit": "^2.2.5",
     "use-strict": "^1.0.1"
