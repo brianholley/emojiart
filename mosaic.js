@@ -10,6 +10,66 @@ function normalize(value, alpha) {
     return Math.floor(value / maxColorValue * 255 * (1.0 - (alpha / maxColorValue)))
 }
 
+function reduceImageToColor(imageFile) {
+    var resized = imagemagick.convert({
+        srcData: fs.readFileSync(imageFile),
+        width: 1,
+        height: 1,
+        resizeStyle: 'fill', 
+        gravity: 'Center',
+        format: 'PNG24'
+    }) 
+    // Consider quantizeColors to reduce colors to smaller set
+    var pixel = imagemagick.getConstPixels({
+        srcData: resized,
+        x: 0,
+        y: 0, 
+        rows: 1,
+        columns: 1
+    })[0]
+    var rgb = {
+        red: normalize(pixel.red, pixel.opacity),
+        green: normalize(pixel.green, pixel.opacity),
+        blue: normalize(pixel.blue, pixel.opacity)
+    }
+    var hsl = rgbToHsl(rgb.red, rgb.green, rgb.blue)
+
+    return {
+        red: rgb.red,
+        green: rgb.green,
+        blue: rgb.blue,
+        hue: Math.floor(hsl[0]),
+        sat: parseFloat(hsl[1].substring(0, hsl[1].length-1)) / 100,
+        lum: parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100,
+    }
+}
+
+function createColorTable(folder, cacheBase, emojiSize) {
+    if (!fs.existsSync(cacheBase)) {
+        fs.mkdirSync(cacheBase)
+    }
+
+    var colors = {}
+    var files = fs.readdirSync(folder)
+    for (var file of files) {
+        var source = folder + '/' + file
+        var resized = cacheBase + '/' + file
+
+        fs.writeFileSync(resized, imagemagick.convert({
+            srcData: fs.readFileSync(source),
+            width: emojiSize,
+            height: emojiSize,
+            resizeStyle: 'fill', 
+            gravity: 'Center'
+        }))
+        
+        colors[resized] = reduceImageToColor(source)
+    }
+    return colors
+}
+
+exports.createColorTable = createColorTable
+
 function colorTableToHslTable(colorTable) {
     var hslTable = {}
     for (var file in colorTable) {
@@ -112,7 +172,7 @@ function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest, ca
     im.convert(cmd, callback)
 }
 
-function generateMosaic(source, dest, colorTable, options) {
+function generate(source, dest, colorTable, options, callback) {
 
     var emojiSize = (options !== undefined && "size" in options ? options.size : 16)
     var maxMosaicSize = (options !== undefined && "maxMosaicSize" in options ? options.maxMosaicSize : 200)
@@ -168,36 +228,39 @@ function generateMosaic(source, dest, colorTable, options) {
     }
 
     if (emojis.length != rows * columns) {
-        throw ("Error: " + emojis.length + " != " + rows + " x " + columns)
+        throw new Error("Error: " + emojis.length + " != " + rows + " x " + columns)
     }
 
     const tileSize = 10
 
-    var cmd = [] 
-    var ctiles = Math.ceil(columns / tileSize) 
-    var rtiles = Math.ceil(rows / tileSize)
-    console.log("Tile size: " + ctiles + "x" + rtiles)
-    var tilesFinished = 0 
-    for (var r=0; r < rtiles; r++) {
-        for (var c=0; c < ctiles; c++) {
-            var tileBase = c * tileSize + r * tileSize * columns
-            var tileName = tempFolder + '/tile_' + c + '_' + r + '.png'
-            var tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
-            var tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
-            renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName, (err, md) => {
-                if (err) throw err
-                tilesFinished++
-                if (tilesFinished == ctiles * rtiles) {
-                    cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-                    //console.log(cmd)
-                    im.convert(cmd)
-                }
-            })
-            console.log("Tile: " + c + "," + r)
+    return new Promise((resolve, reject) => {
+        var cmd = [] 
+        var ctiles = Math.ceil(columns / tileSize) 
+        var rtiles = Math.ceil(rows / tileSize)
+        console.log("Tile size: " + ctiles + "x" + rtiles)
+        var tilesFinished = 0 
+        for (var r=0; r < rtiles; r++) {
+            for (var c=0; c < ctiles; c++) {
+                var tileBase = c * tileSize + r * tileSize * columns
+                var tileName = tempFolder + '/tile_' + c + '_' + r + '.png'
+                var tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
+                var tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
+                renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName, (err, md) => {
+                    if (err) throw err
+                    tilesFinished++
+                    if (tilesFinished == ctiles * rtiles) {
+                        cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+                        //console.log(cmd)
+                        im.convert(cmd)
+                        resolve()
+                    }
+                })
+                console.log("Tile: " + c + "," + r)
 
-            var offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
-            cmd = [...cmd, '-page', offset, tileName]
+                var offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
+                cmd = [...cmd, '-page', offset, tileName]
+            }
         }
-    }
+    })
 }
-exports.generateMosaic = generateMosaic
+exports.generate = generate
