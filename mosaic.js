@@ -62,7 +62,7 @@ function createColorTable(folder, cacheBase, emojiSize) {
             resizeStyle: 'fill', 
             gravity: 'Center'
         }))
-        
+
         colors[resized] = reduceImageToColor(source)
     }
     return colors
@@ -183,6 +183,7 @@ function generate(source, dest, colorTable, options, callback) {
     var columns = Math.ceil(identity.width / emojiSize)
     var rows = Math.ceil(identity.height / emojiSize)
 
+    // TODO: os.tmpdir()
     if (!fs.existsSync('./temp')) {
         fs.mkdirSync('./temp')
     }
@@ -251,8 +252,10 @@ function generate(source, dest, colorTable, options, callback) {
                     if (tilesFinished == ctiles * rtiles) {
                         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
                         //console.log(cmd)
-                        im.convert(cmd)
-                        resolve()
+                        im.convert(cmd, (err, md) => {
+                            if (err) throw err
+                            resolve()
+                        })
                     }
                 })
                 console.log("Tile: " + c + "," + r)

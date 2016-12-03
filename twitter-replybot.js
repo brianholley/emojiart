@@ -5,6 +5,7 @@
 // app.get('/', function(req, res) { res.send('Robot status nominal.') })
 // app.listen(process.env.PORT || 5000)
 
+var fs = require('fs')
 var Twit = require('twit')
 
 class TwitterReplyBot {
@@ -18,20 +19,20 @@ class TwitterReplyBot {
             timeout_ms:           60*1000,
         })
         this.onTweet = this.onTweet.bind(this)
-        this.onTweetAction = params.onTweet
+        this.onMentioned = params.onMentioned
     }
 
     start() {
+        console.log("Listening to mentions stream...")
+
         var stream = this.twit.stream('user') 
         stream.on('tweet', this.onTweet)
     }
 
     onTweet(tweet) {
-        console.log('@' + tweet.user.screen_name + ': ' + tweet.text)
         if (tweet.entities.user_mentions.some((m) => { return m.screen_name == this.name })) {
-            console.log('@ this user')
+            this.onMentioned(this, tweet)
         }
-        this.onTweetAction(tweet, this.twit)
     }
 
     tweetReply(text, replyToId, filepath, altText) {
