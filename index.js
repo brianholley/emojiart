@@ -1,4 +1,5 @@
 var fs = require('fs')
+var schedule = require('node-schedule')
 var os = require('os')
 var path = require('path')
 var rp = require('request-promise-native')
@@ -95,6 +96,59 @@ var bot = new TwitterReplyBot({
     }
 })
 bot.start()
+
+var stateFile = path.join(os.homedir(), 'bot.json')
+var state = {}
+if (fs.existsSync(stateFile)) {
+    state = JSON.parse(fs.readFileSync(stateFile))
+}
+
+var rule = new schedule.RecurrenceRule()
+rule.hour = new schedule.Range(0, 23)
+//rule.minute = new schedule.Range(0, 59)
+console.log("Starting background job")
+var j = schedule.scheduleJob(rule, () => {
+    let sources = [ 
+        {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
+        {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
+    ]
+    let source = Math.floor(Math.random() * sources.length)
+
+    let name = sources[source].name
+    console.log(`Waking up, checking ${name}`)
+    if (state[name] !== undefined) {
+        console.log(`Previous image: ${state[name]}`)
+    }
+
+    var url = ''
+    var outputFile = path.join(os.tmpdir(), 'emoji.png')
+    sources[source].action().then((image) => {
+        console.log(`Image fetched`)
+        console.log(`${image.imageUrl}`)
+        if (image.imageUrl == state[name]) {
+            return new Promise((resolve, reject) => reject('Image already complete - skipped'))
+        }
+        url = image.imageUrl
+        let iotd = path.join(os.tmpdir(), 'source.jpg')
+        fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
+        return mosaic.generate(fs.readFileSync(iotd), outputFile, colorTable, {emojiSize: emojiSize})
+    })
+    .then(() => { 
+        console.log(`Emojification complete`)
+        
+        let text = `${name} image of the day #emojified (source:${url})`
+        bot.tweetReply(text, 0, outputFile, text)
+
+        state[name] = url
+        fs.writeFileSync(stateFile, JSON.stringify(state))
+        console.log("Finished!") 
+        console.log("Back to sleep")
+    })
+    .catch((reason) => { 
+        console.log(reason)
+        console.log("Back to sleep") 
+    })
+})
 
 // bot.onMentioned(bot, {
 //     id: 123456789,
