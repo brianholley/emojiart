@@ -105,8 +105,8 @@ if (fs.existsSync(stateFile)) {
 
 var rule = new schedule.RecurrenceRule()
 rule.hour = new schedule.Range(0, 23)
-//rule.minute = new schedule.Range(0, 59)
-console.log("Starting background job")
+rule.minute = 0
+console.log("Starting background job...")
 var j = schedule.scheduleJob(rule, () => {
     let sources = [ 
         {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
@@ -115,7 +115,8 @@ var j = schedule.scheduleJob(rule, () => {
     let source = Math.floor(Math.random() * sources.length)
 
     let name = sources[source].name
-    console.log(`Waking up, checking ${name}`)
+    let now = new Date()
+    console.log(`Waking up at ${now}, checking ${name}`)
     if (state[name] !== undefined) {
         console.log(`Previous image: ${state[name]}`)
     }
