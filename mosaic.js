@@ -1,6 +1,7 @@
 var fs = require('fs')
 var im = require('imagemagick')
 var imagemagick = require('imagemagick-native')
+var os = require('os')
 var uuid = require('node-uuid')
 var path = require('path')
 var rgbToHsl = require('rgb-to-hsl')
