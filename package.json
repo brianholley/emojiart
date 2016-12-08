@@ -8,7 +8,6 @@
   "license": "MIT",
   "dependencies": {
     "imagemagick": "^0.1.3",
-    "imagemagick-native": "^1.9.3",
     "node-schedule": "^1.2.0",
     "node-uuid": "^1.4.7",
     "request-promise-native": "^1.0.3",

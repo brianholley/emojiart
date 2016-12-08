@@ -32,7 +32,7 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
         Bing.imageOfTheDay().then((image) => {
             let iotd = path.join(os.tmpdir(), 'bingiotd.jpg')
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(fs.readFileSync(iotd), output, colorTable, {emojiSize: emojiSize})
+            return mosaic.generate(iotd, output, colorTable, {emojiSize: emojiSize})
         })
         .then(() => { console.log("Finished!") })
         .catch((reason) => { console.log(reason) })
@@ -42,13 +42,13 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
         Nasa.imageOfTheDay(process.env.NASA_API_KEY).then((image) => {
             let iotd = path.join(os.tmpdir(), 'nasaiotd.jpg')
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(fs.readFileSync(iotd), output, colorTable, {emojiSize: emojiSize})
+            return mosaic.generate(iotd, output, colorTable, {emojiSize: emojiSize})
         })
         .then(() => { console.log("Finished!") })
         .catch((reason) => { console.log(reason) })
     } 
     else {
-        mosaic.generate(fs.readFileSync(input), output, colorTable, {emojiSize: emojiSize})
+        mosaic.generate(input, output, colorTable, {emojiSize: emojiSize})
             .then(() => { console.log("Finished!") })
             .catch((reason) => { console.log(reason) })
     }
@@ -78,7 +78,7 @@ var bot = new TwitterReplyBot({
                 fs.writeFileSync(inputFile, data, {encoding: 'binary'})
                 
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
-                mosaic.generate(fs.readFileSync(inputFile), outputFile, colorTable, {
+                mosaic.generate(inputFile, outputFile, colorTable, {
                     emojiSize: emojiSize
                 })
                 .then(() => {
