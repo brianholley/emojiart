@@ -2,6 +2,7 @@ var fs = require('fs')
 var im = require('imagemagick')
 var imagemagick = require('imagemagick-native')
 var uuid = require('node-uuid')
+var path = require('path')
 var rgbToHsl = require('rgb-to-hsl')
 
 var depth = imagemagick.quantumDepth()
@@ -94,14 +95,12 @@ function findTileForPixel(rgb, hslTable) {
     var hue = Math.floor(hsl[0])
     var sat = parseFloat(hsl[1].substring(0, hsl[1].length-1)) / 100
     var lum = parseFloat(hsl[2].substring(0, hsl[2].length-1)) / 100
-    //console.log("Target pixel h: " + hue + ", s: " + sat + ", l: " + lum)
     
     for (var i=0; i < 30; i++) {
         if ((hue + i) in hslTable) {
             var best = hslTable[(hue + i)][0]
             var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
             for (var opt of hslTable[(hue + i)].slice(1)) {
-                //console.log("\tTrying : " + JSON.stringify(opt))
                 var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
                 if (d < delta) {
                     best = opt
@@ -116,7 +115,6 @@ function findTileForPixel(rgb, hslTable) {
             var best = hslTable[(hue - i)][0]
             var delta = Math.sqrt(Math.pow(best.sat - sat, 2) + Math.pow(best.lum - lum, 2))
             for (var opt of hslTable[(hue - i)].slice(1)) {
-                //console.log("\tTrying : " + JSON.stringify(opt))
                 var d = Math.sqrt(Math.pow(opt.sat - sat, 2) + Math.pow(opt.lum - lum, 2))
                 if (d < delta) {
                     best = opt
@@ -130,33 +128,6 @@ function findTileForPixel(rgb, hslTable) {
     }
     throw new Error('Could not find color match for RGB ' + JSON.stringify(rgb))
 }
-
-// function assemble(columns, emojis, emojiSize, destFile) {
-//     var convertCmd = []
-//     for (var p=0; p < emojis.length; p++) {
-//         var c = p % columns
-//         var r = Math.floor(p / columns)
-
-//         var filename = emojis[p].substring(emojis[p].lastIndexOf('/'))
-//         var tempFile = './temp/' + filename
-//         if (!fs.existsSync(tempFile)) {
-//             fs.writeFileSync(tempFile, imagemagick.convert({
-//                 srcData: fs.readFileSync(emojis[p]),
-//                 width: emojiSize,
-//                 height: emojiSize,
-//                 resizeStyle: 'fill', 
-//                 gravity: 'Center'
-//             }))
-//         }
-
-//         var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
-//         convertCmd = [...convertCmd, '-page', offset, tempFile]
-//     }
-
-//     convertCmd = [...convertCmd, '-background', 'white', '-layers', 'mosaic', destFile]
-//     //console.log(JSON.stringify(convertCmd))
-//     im.convert(convertCmd)
-// }
 
 function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest, callback) {
     var cmd = []
@@ -173,7 +144,7 @@ function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest, ca
 }
 
 function generate(source, dest, colorTable, options, callback) {
-
+    var verbose = (options !== undefined && "verbose" in options ? options.verbose : false)
     var emojiSize = (options !== undefined && "size" in options ? options.size : 16)
     var maxMosaicSize = (options !== undefined && "maxMosaicSize" in options ? options.maxMosaicSize : 200)
     
@@ -183,23 +154,19 @@ function generate(source, dest, colorTable, options, callback) {
     var columns = Math.ceil(identity.width / emojiSize)
     var rows = Math.ceil(identity.height / emojiSize)
 
-    // TODO: os.tmpdir()
-    if (!fs.existsSync('./temp')) {
-        fs.mkdirSync('./temp')
-    }
-    var tempFolder = './temp/' + uuid.v4() 
+    var tempFolder = path.join(os.tmpdir(), '' + uuid.v4()) 
     fs.mkdirSync(tempFolder)
 
-    console.log("Mosaic size: " + columns + "x" + rows)
+    if (verbose) console.log("Mosaic size: " + columns + "x" + rows)
     if (columns > rows && columns > maxMosaicSize) {
         columns = maxMosaicSize
         rows = Math.floor(identity.height / identity.width * columns)
-        console.log("Snapped to " + columns + "x" + rows)
+        if (verbose) console.log("Snapped to " + columns + "x" + rows)
     }
     else if (rows > columns && rows > maxMosaicSize) {
         rows = maxMosaicSize
         columns = Math.floor(identity.width / identity.height * rows)
-        console.log("Snapped to " + columns + "x" + rows)
+        if (verbose) console.log("Snapped to " + columns + "x" + rows)
     }
 
     var resized = imagemagick.convert({
@@ -224,7 +191,7 @@ function generate(source, dest, colorTable, options, callback) {
             green: normalize(p.green, p.opacity),
             blue: normalize(p.blue, p.opacity)
         }
-        //console.log("Target pixel rgb: " + JSON.stringify(rgb))
+        if (verbose) console.log("Target pixel rgb: " + JSON.stringify(rgb))
         emojis.push(findTileForPixel(rgb, hslTable))
     }
 
@@ -238,7 +205,7 @@ function generate(source, dest, colorTable, options, callback) {
         var cmd = [] 
         var ctiles = Math.ceil(columns / tileSize) 
         var rtiles = Math.ceil(rows / tileSize)
-        console.log("Tile size: " + ctiles + "x" + rtiles)
+        if (verbose) console.log("Tile size: " + ctiles + "x" + rtiles)
         var tilesFinished = 0 
         for (var r=0; r < rtiles; r++) {
             for (var c=0; c < ctiles; c++) {
@@ -251,14 +218,14 @@ function generate(source, dest, colorTable, options, callback) {
                     tilesFinished++
                     if (tilesFinished == ctiles * rtiles) {
                         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-                        //console.log(cmd)
+                        if (verbose) console.log(cmd)
                         im.convert(cmd, (err, md) => {
                             if (err) throw err
                             resolve()
                         })
                     }
                 })
-                console.log("Tile: " + c + "," + r)
+                if (verbose) console.log("Tile: " + c + "," + r)
 
                 var offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
                 cmd = [...cmd, '-page', offset, tileName]
