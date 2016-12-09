@@ -125,7 +125,7 @@ var j = schedule.scheduleJob(rule, () => {
         url = image.imageUrl
         let iotd = path.join(os.tmpdir(), 'source.jpg')
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-        return mosaic.generate(fs.readFileSync(iotd), outputFile, tileset, {emojiSize: emojiSize})
+        return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
     })
     .then(() => { 
         console.log(`Emojification complete`)
