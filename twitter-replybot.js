@@ -1,10 +1,3 @@
-// Web server for Heroku
-// TODO: Can this run as a Heroku worker dyno instead?
-// var express = require('express')
-// var app = express()
-// app.get('/', function(req, res) { res.send('Robot status nominal.') })
-// app.listen(process.env.PORT || 5000)
-
 var fs = require('fs')
 var Twit = require('twit')
 
