@@ -5,10 +5,12 @@ function imageOfTheDay() {
     return rp({uri: url, json: true}).then((info) => {
         let imageUrl = 'https://www.bing.com' + info.images[0].url
         let altText = info.images[0].copyright
-        return rp({uri: imageUrl, encoding: null}).then((data) => {
+        return rp({uri: imageUrl, encoding: null, resolveWithFullResponse: true}).then(response => {
+            let contentType = response.headers["content-type"]
             return {
                 imageUrl: imageUrl, 
-                imageData: data, 
+                imageData: response.body, 
+                contentType: contentType,
                 altText: altText
             }
         })

@@ -1,4 +1,5 @@
 var fs = require('fs')
+var mime = require('mime-types')
 var schedule = require('node-schedule')
 var os = require('os')
 var path = require('path')
@@ -23,7 +24,8 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
 
     if (input == "-bing") {
         Bing.imageOfTheDay().then((image) => {
-            let iotd = path.join(os.tmpdir(), 'bingiotd.jpg')
+            let ext = mime.extension(image.contentType)
+            let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
         })
@@ -33,7 +35,8 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
     } 
     else if (input == "-nasa") {
         Nasa.imageOfTheDay(process.env.NASA_API_KEY).then((image) => {
-            let iotd = path.join(os.tmpdir(), 'nasaiotd.jpg')
+            let ext = mime.extension(image.contentType)
+            let iotd = path.join(os.tmpdir(), `nasaiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
         })
@@ -66,9 +69,11 @@ var bot = new TwitterReplyBot({
 
         if (pictures.length > 0) {
             console.log(`${tweet.id}: Picture count: ${pictures.length}`)
-            rp({uri: pictures[0], encoding: null}).then((data) => {
-                let inputFile = path.join(os.tmpdir(), `tweet_${tweet.id}.jpg`)
-                fs.writeFileSync(inputFile, data, {encoding: 'binary'})
+            rp({uri: pictures[0], encoding: null, resolveWithFullResponse: true}).then(response => {
+                let contentType = response.headers["content-type"]
+                let ext = mime.extension(contentType)
+                let inputFile = path.join(os.tmpdir(), `tweet_${tweet.id}.${ext}`)
+                fs.writeFileSync(inputFile, response.body, {encoding: 'binary'})
                 
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
                 mosaic.generate(inputFile, outputFile, tileset, {
@@ -123,7 +128,8 @@ var j = schedule.scheduleJob(rule, () => {
             return new Promise((resolve, reject) => reject('Image already complete - skipped'))
         }
         url = image.imageUrl
-        let iotd = path.join(os.tmpdir(), 'source.jpg')
+        let ext = mime.extension(image.contentType)
+        let iotd = path.join(os.tmpdir(), `source.${ext}`)
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
         return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
     })
