@@ -17,37 +17,23 @@ var tileset = new mosaic.Tileset(
     path.join(os.homedir(), 'emojis'),
     emojiSize)
 
+let sources = [ 
+    {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
+    {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
+    {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
+]
+
 // Test usage: test <input> <output>
 if (process.argv.length >= 5 && process.argv[2] == "test") {
     let input = process.argv[3]
     let output = process.argv[4]
     console.log(`TEST MODE: ${input} => ${output}`)
 
-    if (input == "-bing") {
-        Bing.imageOfTheDay().then((image) => {
+    let source = sources.find(s => s.name == input);
+    if (source !== undefined) {
+        source.action().then((image) => {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
-            fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
-        })
-        .then(() => { console.log("Finished!") })
-        .catch((reason) => { console.log(reason) })
-
-    } 
-    else if (input == "-nasa") {
-        Nasa.imageOfTheDay(process.env.NASA_API_KEY).then((image) => {
-            let ext = mime.extension(image.contentType)
-            let iotd = path.join(os.tmpdir(), `nasaiotd.${ext}`)
-            fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
-        })
-        .then(() => { console.log("Finished!") })
-        .catch((reason) => { console.log(reason) })
-    } 
-    else if (input == "-wikipedia") {
-        Wikipedia.imageOfTheDay().then(image => {
-            let ext = mime.extension(image.contentType)
-            let iotd = path.join(os.tmpdir(), `wikipediaiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
         })
@@ -117,11 +103,6 @@ rule.hour = new schedule.Range(0, 23)
 rule.minute = 0
 console.log("Starting background job...")
 var j = schedule.scheduleJob(rule, () => {
-    let sources = [ 
-        {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
-        {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
-        {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
-    ]
     let source = Math.floor(Math.random() * sources.length)
 
     let name = sources[source].name
