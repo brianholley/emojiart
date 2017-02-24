@@ -9,6 +9,7 @@ var Bing = require('./bing-iotd')
 var mosaic = require('./mosaic')
 var Nasa = require('./nasa-iotd')
 var TwitterReplyBot = require('./twitter-replybot')
+var Wikipedia = require('./wikipedia-potd')
 
 const emojiSize = 16
 var tileset = new mosaic.Tileset(
@@ -37,6 +38,16 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
         Nasa.imageOfTheDay(process.env.NASA_API_KEY).then((image) => {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `nasaiotd.${ext}`)
+            fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
+            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
+        })
+        .then(() => { console.log("Finished!") })
+        .catch((reason) => { console.log(reason) })
+    } 
+    else if (input == "-wikipedia") {
+        Wikipedia.imageOfTheDay().then(image => {
+            let ext = mime.extension(image.contentType)
+            let iotd = path.join(os.tmpdir(), `wikipediaiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
         })
@@ -109,6 +120,7 @@ var j = schedule.scheduleJob(rule, () => {
     let sources = [ 
         {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
         {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
+        {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
     ]
     let source = Math.floor(Math.random() * sources.length)
 
