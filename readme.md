@@ -25,10 +25,10 @@ Images-to-emoji generator (a la ascii-art)
 
  
 
-**Test file mode:** 'node index.js test  '
+**Test file mode:** 'node index.js test <in_file> <out_file> '
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Emoji the <in> file to <out>
+- Emoji the <in_file> file to <out_file>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  
