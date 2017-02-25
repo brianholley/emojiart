@@ -9,6 +9,7 @@ var Bing = require('./bing-iotd')
 var Flickr = require('./flickr-iotd')
 var mosaic = require('./mosaic')
 var Nasa = require('./nasa-iotd')
+var NatGeo = require('./natgeo-potd')
 var TwitterReplyBot = require('./twitter-replybot')
 var Wikipedia = require('./wikipedia-potd')
 
@@ -23,6 +24,7 @@ let sources = [
     {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
     {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
     {name: 'Flickr', action: () => Flickr.imageOfTheDay()},
+    {name: 'NatGeo', action: () => NatGeo.imageOfTheDay()},
 ]
 
 // Test usage: test <input> <output>
