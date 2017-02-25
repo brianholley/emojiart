@@ -33,10 +33,10 @@ Images-to-emoji generator (a la ascii-art)
 
  
 
-**Test IOTD mode:** 'node index.js test [-nasa\|-bing] '
+**Test IOTD mode:** 'node index.js test [Nasa\|Bing\|Wikipedia\|Flickr] <out_file>'
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Emoji the image of the day from the specified service to <out>
+- Emoji the image of the day from the specified service to <out_file>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
  
