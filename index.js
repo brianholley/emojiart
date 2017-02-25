@@ -6,6 +6,7 @@ var path = require('path')
 require('use-strict')
 
 var Bing = require('./bing-iotd')
+var Flickr = require('./flickr-iotd')
 var mosaic = require('./mosaic')
 var Nasa = require('./nasa-iotd')
 var TwitterReplyBot = require('./twitter-replybot')
@@ -21,6 +22,7 @@ let sources = [
     {name: 'Bing', action: () => Bing.imageOfTheDay()}, 
     {name: 'Nasa', action: () => Nasa.imageOfTheDay(process.env.NASA_API_KEY)}, 
     {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
+    {name: 'Flickr', action: () => Flickr.imageOfTheDay()},
 ]
 
 // Test usage: test <input> <output>
