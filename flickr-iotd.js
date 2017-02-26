@@ -10,16 +10,10 @@ function imageOfTheDay() {
         let altText = selected.attribs.title
         return rp({uri: photoPage, followAllRedirects: true}).then(html => {
             let $ = cheerio.load(html)
-            let imageUrl = $("div#allsizes-photo img").attr("src")
-            return rp({uri: imageUrl, encoding: null, resolveWithFullResponse: true}).then(response => {
-                let contentType = response.headers["content-type"]
-                return {
-                    imageUrl: imageUrl, 
-                    imageData: response.body, 
-                    contentType: contentType,
-                    altText: altText
-                }
-            })
+            return {
+                imageUrl: $("div#allsizes-photo img").attr("src"),
+                altText: altText
+            }
         })
     })
 }

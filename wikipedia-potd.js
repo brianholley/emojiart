@@ -13,17 +13,10 @@ function imageOfTheDay() {
         let $ = cheerio.load(html)
         let img = $("div#content img")
         let srcset = img.attr("srcset").split(" ")
-        let imageUrl = "http:" + srcset[srcset.length - 2]
-        let altText = img.attr("alt")
-        return rp({uri: imageUrl, encoding: null, resolveWithFullResponse: true}).then(response => {
-            let contentType = response.headers["content-type"]
-            return {
-                imageUrl: imageUrl, 
-                imageData: response.body, 
-                contentType: contentType,
-                altText: altText
-            }
-        })
+        return {
+            imageUrl: "http:" + srcset[srcset.length - 2],
+            altText: img.attr("alt")
+        }
     })
 }
 

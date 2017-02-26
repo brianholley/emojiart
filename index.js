@@ -3,6 +3,7 @@ var mime = require('mime-types')
 var schedule = require('node-schedule')
 var os = require('os')
 var path = require('path')
+var rp = require('request-promise-native')
 require('use-strict')
 
 var Bing = require('./bing-iotd')
@@ -27,6 +28,18 @@ let sources = [
     {name: 'NatGeo', action: () => NatGeo.imageOfTheDay()},
 ]
 
+function downloadImage(imageInfo) {
+    return rp({uri: imageInfo.imageUrl, encoding: null, resolveWithFullResponse: true}).then(response => {
+        let contentType = response.headers["content-type"]
+        return {
+            imageUrl: imageInfo.imageUrl,
+            altText: imageInfo.altText,
+            imageData: response.body, 
+            contentType: contentType
+        }
+    })
+}
+
 // Test usage: test <input> <output>
 if (process.argv.length >= 5 && process.argv[2] == "test") {
     let input = process.argv[3]
@@ -35,14 +48,16 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
 
     let source = sources.find(s => s.name == input);
     if (source !== undefined) {
-        source.action().then((image) => {
+        source.action().then(imageInfo => {
+            return downloadImage(imageInfo)
+        }).then(image => {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
         })
         .then(() => { console.log("Finished!") })
-        .catch((reason) => { console.log(reason) })
+        .catch(reason => { console.log(reason) })
     } 
     else {
         mosaic.generate(input, output, tileset, {emojiSize: emojiSize})
@@ -118,7 +133,9 @@ var j = schedule.scheduleJob(rule, () => {
 
     var url = ''
     var outputFile = path.join(os.tmpdir(), 'emoji.png')
-    sources[source].action().then((image) => {
+    sources[source].action().then(imageInfo => {
+        return downloadImage(imageInfo)
+    }).then(image => {
         console.log(`Image fetched`)
         console.log(`${image.imageUrl}`)
         if (image.imageUrl == state[name]) {
@@ -129,8 +146,7 @@ var j = schedule.scheduleJob(rule, () => {
         let iotd = path.join(os.tmpdir(), `source.${ext}`)
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
         return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
-    })
-    .then(() => { 
+    }).then(() => { 
         console.log(`Emojification complete`)
         
         let text = `${name} image of the day #emojified (source:${url})`
@@ -140,8 +156,7 @@ var j = schedule.scheduleJob(rule, () => {
         fs.writeFileSync(stateFile, JSON.stringify(state))
         console.log("Finished!") 
         console.log("Back to sleep")
-    })
-    .catch((reason) => { 
+    }).catch(reason => { 
         console.log(reason)
         console.log("Back to sleep") 
     })
