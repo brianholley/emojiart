@@ -2,10 +2,15 @@
   "name": "emojiart",
   "version": "1.0.0",
   "description": "Emoji mosaic pictures twitterbot",
-  "main": "index.js",
-  "start": "index.js",
   "author": "brian.holley@hotmail.com",
+  "repository" : {
+    "type" : "git", 
+    "url" : "https://github.com/brianholley/emojiart.git"
+  },
   "license": "MIT",
+  "scripts" : {
+    "test" : "node index.js test"
+  },
   "dependencies": {
     "cheerio": "^0.22.0",
     "imagemagick": "^0.1.3",

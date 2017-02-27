@@ -1,10 +1,8 @@
 emojiart
 ========
-
 Images-to-emoji generator (a la ascii-art)
 
  
-
 ### Dependencies
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -12,7 +10,6 @@ Images-to-emoji generator (a la ascii-art)
 - Imagemagick
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 
 
 ### Run modes
 
@@ -23,23 +20,29 @@ Images-to-emoji generator (a la ascii-art)
 - Post images of the day when they're available
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- 
 
-**Test file mode:** 'node index.js test <in_file> <out_file> '
+**Test file mode** 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Emoji the <in_file> file to <out_file>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Run emojification on an image (<in_file>) and write the image to disk (<out_file>)
+````
+npm test <in_file> <out_file>
+````
 
- 
+**Test IOTD mode** 
 
-**Test IOTD mode:** 'node index.js test [Nasa\|Bing\|Wikipedia\|Flickr\|NatGeo] <out_file>'
+Emoji the image of the day from the specified <service> and write the image to disk (<out_file>)
+````
+npm test <service> <out_file>
+````
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Emoji the image of the day from the specified service to <out_file>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Available services**
 
- 
+-   **Bing** Image of the day
+-   **Flickr** Interesting photos of the last 7 days
+-   **Nasa** Astronomy picture of the day
+-   **NatGeo** (National Geographic) Photo of the day
+-   **Wikipedia** Picture of the day
+
 
 ### Images
  
