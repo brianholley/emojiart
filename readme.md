@@ -1,24 +1,24 @@
 emojiart
 ========
-Images-to-emoji generator (a la ascii-art)
+Images-to-emoji generator (a la ascii-art). Converts pictures to emoji mosaics from file or a variety of common image sources. Provides a friendly twitter emoji bot.
 
  
-### Dependencies
+## Dependencies
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Node/NPM
-- Imagemagick
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-   Imagemagick needs to be installed separately from here: [ImageMagick](http://imagemagick.org/)
+-   All other dependencies are installed via ````npm install````
 
 
-### Run modes
+## Run modes
 
-**Twitter bot mode:** 'node index.js'
+**Twitter bot mode** 
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Reply to twitter picture posts
-- Post images of the day when they're available
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-   Reply to twitter picture posts
+-   Post images of the day from various services when they're available
+
+````
+npm start
+````
 
 
 **Test file mode** 
@@ -44,7 +44,7 @@ npm test <service> <out_file>
 -   **Wikipedia** Picture of the day
 
 
-### Images
+## Image attribution
  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Emoji provided free by [EmojiOne](http://emojione.com)
