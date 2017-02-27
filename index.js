@@ -134,13 +134,14 @@ var j = schedule.scheduleJob(rule, () => {
     var url = ''
     var outputFile = path.join(os.tmpdir(), 'emoji.png')
     sources[source].action().then(imageInfo => {
-        return downloadImage(imageInfo)
-    }).then(image => {
-        console.log(`Image fetched`)
-        console.log(`${image.imageUrl}`)
-        if (image.imageUrl == state[name]) {
+        console.log(`Image found`)
+        console.log(`${imageInfo.imageUrl}`)
+        if (imageInfo.imageUrl == state[name]) {
             return new Promise((resolve, reject) => reject('Image already complete - skipped'))
         }
+        return downloadImage(imageInfo)
+    }).then(image => {
+        console.log(`Image downloaded`)
         url = image.imageUrl
         let ext = mime.extension(image.contentType)
         let iotd = path.join(os.tmpdir(), `source.${ext}`)
