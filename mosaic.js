@@ -157,18 +157,23 @@ class Tileset {
 
 exports.Tileset = Tileset
 
-function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest, callback) {
-    var cmd = []
-    for (var r=0; r < rows; r++) {
-        for (var c=0; c < columns; c++) {
-            var index = start + c + r * rowOffset
-            var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
-            cmd = [...cmd, '-page', offset, emojis[index]]
+function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
+    return new Promise((resolve, reject) => {
+        var cmd = []
+        for (var r=0; r < rows; r++) {
+            for (var c=0; c < columns; c++) {
+                var index = start + c + r * rowOffset
+                var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
+                cmd = [...cmd, '-page', offset, emojis[index]]
+            }
         }
-    }
 
-    cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-    im.convert(cmd, callback)
+        cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+        im.convert(cmd, (err, md) => {
+            if (err) throw err
+            resolve(md)
+        })
+    })
 }
 
 function generate(source, dest, tileset, options, callback) {
@@ -230,40 +235,40 @@ function generate(source, dest, tileset, options, callback) {
     .then((emojis) => {
         const tileSize = 10
 
-        return new Promise((resolve, reject) => {
-            var cmd = [] 
-            var ctiles = Math.ceil(columns / tileSize) 
-            var rtiles = Math.ceil(rows / tileSize)
-            if (verbose) console.log("Tile size: " + ctiles + "x" + rtiles)
-            
-            var tempFolder = path.join(os.tmpdir(), '' + uuid.v4()) 
-            fs.mkdirSync(tempFolder)
+        var cmd = [] 
+        var ctiles = Math.ceil(columns / tileSize) 
+        var rtiles = Math.ceil(rows / tileSize)
+        if (verbose) console.log("Tile size: " + ctiles + "x" + rtiles)
+        
+        var tempFolder = path.join(os.tmpdir(), '' + uuid.v4()) 
+        fs.mkdirSync(tempFolder)
 
-            var tilesFinished = 0 
-            for (var r=0; r < rtiles; r++) {
-                for (var c=0; c < ctiles; c++) {
-                    var tileBase = c * tileSize + r * tileSize * columns
-                    var tileName = tempFolder + '/tile_' + c + '_' + r + '.png'
-                    var tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
-                    var tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
-                    renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName, (err, md) => {
-                        if (err) throw err
-                        tilesFinished++
-                        if (tilesFinished == ctiles * rtiles) {
-                            cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-                            if (verbose) console.log(cmd)
-                            im.convert(cmd, (err, md) => {
-                                if (err) throw err
-                                resolve()
-                            })
-                        }
-                    })
-                    if (verbose) console.log("Tile: " + c + "," + r)
+        var tileRenders = []
+        for (var r=0; r < rtiles; r++) {
+            for (var c=0; c < ctiles; c++) {
+                let tileBase = c * tileSize + r * tileSize * columns
+                let tileName = tempFolder + '/tile_' + c + '_' + r + '.png'
+                let tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
+                let tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
+                let render = renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName)
+                tileRenders = [...tileRenders, render]
+                
+                if (verbose) console.log("Tile: " + c + "," + r)
 
-                    var offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
-                    cmd = [...cmd, '-page', offset, tileName]
-                }
+                let offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
+                cmd = [...cmd, '-page', offset, tileName]
             }
+        }
+        return Promise.all(tileRenders).then(renders => cmd)
+    })
+    .then(cmd => {
+        return new Promise((resolve, reject) => {
+            cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+            if (verbose) console.log(cmd)
+            im.convert(cmd, (err, md) => {
+                if (err) throw err
+                resolve()
+            })
         })
     })
 }
