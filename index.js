@@ -139,25 +139,29 @@ var j = schedule.scheduleJob(rule, () => {
         if (imageInfo.imageUrl == state[name]) {
             return new Promise((resolve, reject) => reject('Image already complete - skipped'))
         }
+        console.log(`Downloading`)
         return downloadImage(imageInfo)
     }).then(image => {
-        console.log(`Image downloaded`)
+        console.log(`Downloaded`)
         url = image.imageUrl
         let ext = mime.extension(image.contentType)
         let iotd = path.join(os.tmpdir(), `source.${ext}`)
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
+        console.log(`Generating mosaic`)
         return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
     }).then(() => { 
-        console.log(`Emojification complete`)
+        console.log(`Mosaic complete`)
         
         let text = `${name} image of the day #emojified (source:${url})`
-        bot.tweetReply(text, 0, outputFile, text)
-
+        console.log(`Tweeting`)
+        return bot.tweetReply(text, 0, outputFile, text)
+    }).then(() => {
+        console.log("Finished!") 
         state[name] = url
         fs.writeFileSync(stateFile, JSON.stringify(state))
-        console.log("Finished!") 
         console.log("Back to sleep")
-    }).catch(reason => { 
+    }).catch(reason => {
+        console.log("Error during emojification:") 
         console.log(reason)
         console.log("Back to sleep") 
     })

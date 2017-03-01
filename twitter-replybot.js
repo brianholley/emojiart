@@ -29,22 +29,25 @@ class TwitterReplyBot {
     }
 
     tweetReply(text, replyToId, filepath, altText) {
-        var b64content = fs.readFileSync(filepath, { encoding: 'base64' })
-        this.twit.post('media/upload', { media_data: b64content }, (err, data, response) => {
-            var mediaIdStr = data.media_id_string
-            var meta_params = { media_id: mediaIdStr, alt_text: { text: altText } }
+        return new Promise((resolve, reject) => {
+            var b64content = fs.readFileSync(filepath, { encoding: 'base64' })
+            this.twit.post('media/upload', { media_data: b64content }, (err, data, response) => {
+                var mediaIdStr = data.media_id_string
+                var meta_params = { media_id: mediaIdStr, alt_text: { text: altText } }
 
-            this.twit.post('media/metadata/create', meta_params, (err, data, response) => {
-                if (err) throw err
-                
-                var params = { 
-                    status: text,
-                    in_reply_to_status_id: replyToId, 
-                    media_ids: [mediaIdStr] 
-                }
-                this.twit.post('statuses/update', params, (err, data, response) => {
+                this.twit.post('media/metadata/create', meta_params, (err, data, response) => {
                     if (err) throw err
-                    console.log("Tweet success")
+                    
+                    var params = { 
+                        status: text,
+                        in_reply_to_status_id: replyToId, 
+                        media_ids: [mediaIdStr] 
+                    }
+                    this.twit.post('statuses/update', params, (err, data, response) => {
+                        if (err) throw err
+                        resolve()
+                        console.log("Tweet success")
+                    })
                 })
             })
         })
