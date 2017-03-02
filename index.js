@@ -67,6 +67,24 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
     return
 }
 
+let recentTweets = (bot) => {
+    return new Promise((resolve, reject) => {
+        bot.twit.get('statuses/user_timeline', { count: 20 }, (err, data, response) => {
+            let tweets = data.map(t => { 
+                return { 
+                    date: new Date(t.created_at),
+                    url: t.entities.urls[0].expanded_url
+                }
+            }).reduce((acc, val) => { 
+                acc[val.url] = val.date 
+                return acc
+            }, {})
+            console.log(`Found ${Object.keys(tweets).length} previously tweeted urls`)
+            resolve(tweets)
+        })
+    })
+}
+
 function picturesInTweet(tweet) {
     return tweet.entities.media.filter((m) => m.type == "photo").map((m) => {
         return m.media_url_https
@@ -109,61 +127,55 @@ var bot = new TwitterReplyBot({
         }
     }
 })
-bot.start()
 
-var stateFile = path.join(os.homedir(), 'bot.json')
-var state = {}
-if (fs.existsSync(stateFile)) {
-    state = JSON.parse(fs.readFileSync(stateFile))
-}
+recentTweets(bot).then(state => {
+    bot.start()
 
-var rule = new schedule.RecurrenceRule()
-rule.hour = new schedule.Range(0, 23)
-rule.minute = 0
-console.log("Starting background job...")
-var j = schedule.scheduleJob(rule, () => {
-    let source = Math.floor(Math.random() * sources.length)
+    var rule = new schedule.RecurrenceRule()
+    rule.hour = new schedule.Range(0, 23)
+    rule.minute = 0
+    console.log("Starting background job...")
+    schedule.scheduleJob(rule, () => {
+        let source = Math.floor(Math.random() * sources.length)
 
-    let name = sources[source].name
-    let now = new Date()
-    console.log(`Waking up at ${now}, checking ${name}`)
-    if (state[name] !== undefined) {
-        console.log(`Previous image: ${state[name]}`)
-    }
-
-    var url = ''
-    var outputFile = path.join(os.tmpdir(), 'emoji.png')
-    sources[source].action().then(imageInfo => {
-        console.log(`Image found`)
-        console.log(`${imageInfo.imageUrl}`)
-        if (imageInfo.imageUrl == state[name]) {
-            return new Promise((resolve, reject) => reject('Image already complete - skipped'))
-        }
-        console.log(`Downloading`)
-        return downloadImage(imageInfo)
-    }).then(image => {
-        console.log(`Downloaded`)
-        url = image.imageUrl
-        let ext = mime.extension(image.contentType)
-        let iotd = path.join(os.tmpdir(), `source.${ext}`)
-        fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-        console.log(`Generating mosaic`)
-        return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
-    }).then(() => { 
-        console.log(`Mosaic complete`)
+        let name = sources[source].name
+        let now = new Date()
+        console.log(`========================================`)
+        console.log(`Waking up at ${now}, checking ${name}`)
         
-        let text = `${name} image of the day #emojified (source:${url})`
-        console.log(`Tweeting`)
-        return bot.tweetReply(text, 0, outputFile, text)
-    }).then(() => {
-        console.log("Finished!") 
-        state[name] = url
-        fs.writeFileSync(stateFile, JSON.stringify(state))
-        console.log("Back to sleep")
-    }).catch(reason => {
-        console.log("Error during emojification:") 
-        console.log(reason)
-        console.log("Back to sleep") 
+        var url = ''
+        var outputFile = path.join(os.tmpdir(), 'emoji.png')
+        sources[source].action().then(imageInfo => {
+            console.log(`Image found`)
+            console.log(`${imageInfo.imageUrl}`)
+            if (imageInfo.imageUrl in state) {
+                return new Promise((resolve, reject) => reject('Image already complete - skipped'))
+            }
+            console.log(`Downloading`)
+            return downloadImage(imageInfo)
+        }).then(image => {
+            console.log(`Downloaded`)
+            url = image.imageUrl
+            let ext = mime.extension(image.contentType)
+            let iotd = path.join(os.tmpdir(), `source.${ext}`)
+            fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
+            console.log(`Generating mosaic`)
+            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
+        }).then(() => { 
+            console.log(`Mosaic complete`)
+            
+            let text = `${name} image of the day #emojified (source:${url})`
+            console.log(`Tweeting`)
+            return bot.tweetReply(text, 0, outputFile, text)
+        }).then(() => {
+            console.log("Finished!") 
+            state[url] = new Date()
+            console.log("Back to sleep")
+        }).catch(reason => {
+            console.log("Error during emojification:") 
+            console.log(reason)
+            console.log("Back to sleep") 
+        })
     })
 })
 
