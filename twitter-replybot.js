@@ -32,6 +32,7 @@ class TwitterReplyBot {
         return new Promise((resolve, reject) => {
             var b64content = fs.readFileSync(filepath, { encoding: 'base64' })
             this.twit.post('media/upload', { media_data: b64content }, (err, data, response) => {
+                if (err) throw err
                 var mediaIdStr = data.media_id_string
                 var meta_params = { media_id: mediaIdStr, alt_text: { text: altText } }
 
