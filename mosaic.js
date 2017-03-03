@@ -15,7 +15,7 @@ function resize(file, outFile, width, height, format) {
         im.convert(
             [file, '-resize', size, '-gravity', 'Center', '-format', format, outFile], 
             (err, md) => {
-                if (err) throw err
+                if (err) return reject(err)
                 resolve(outFile)
             })
     })
@@ -170,7 +170,7 @@ function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
 
         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
         im.convert(cmd, (err, md) => {
-            if (err) throw err
+            if (err) return reject(err)
             resolve(md)
         })
     })
@@ -187,7 +187,7 @@ function generate(source, dest, tileset, options, callback) {
     .then(() => {
         return new Promise((resolve, reject) => {
             im.identify(source, (err, identity) => {
-                if (err) throw err
+                if (err) return reject(err)
                 resolve(identity)
             })
         })
@@ -266,7 +266,7 @@ function generate(source, dest, tileset, options, callback) {
             cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
             if (verbose) console.log(cmd)
             im.convert(cmd, (err, md) => {
-                if (err) throw err
+                if (err) return reject(err)
                 resolve()
             })
         })
