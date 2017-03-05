@@ -1,23 +1,19 @@
 var fs = require('fs')
-var im = require('imagemagick')
 var os = require('os')
 var uuid = require('node-uuid')
 var path = require('path')
 var rgbToHsl = require('rgb-to-hsl')
+
+var imp = require('./imagemagick-promise')
 
 function normalize(value, alpha) {
     return Math.floor(value * alpha / 255)
 }
 
 function resize(file, outFile, width, height, format) {
-    return new Promise((resolve, reject) => {
-        let size = `${width}x${height}!`
-        im.convert(
-            [file, '-resize', size, '-gravity', 'Center', '-format', format, outFile], 
-            (err, md) => {
-                if (err) return reject(err)
-                resolve(outFile)
-            })
+    let size = `${width}x${height}!`
+    return imp.convert([file, '-resize', size, '-gravity', 'Center', '-format', format, outFile]).then(md => {
+        return outFile
     })
 }
 
@@ -158,22 +154,17 @@ class Tileset {
 exports.Tileset = Tileset
 
 function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
-    return new Promise((resolve, reject) => {
-        var cmd = []
-        for (var r=0; r < rows; r++) {
-            for (var c=0; c < columns; c++) {
-                var index = start + c + r * rowOffset
-                var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
-                cmd = [...cmd, '-page', offset, emojis[index]]
-            }
+    var cmd = []
+    for (var r=0; r < rows; r++) {
+        for (var c=0; c < columns; c++) {
+            var index = start + c + r * rowOffset
+            var offset = '+' + (emojiSize * c) + '+' + (emojiSize * r)
+            cmd = [...cmd, '-page', offset, emojis[index]]
         }
+    }
 
-        cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-        im.convert(cmd, (err, md) => {
-            if (err) return reject(err)
-            resolve(md)
-        })
-    })
+    cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+    return imp.convert(cmd)
 }
 
 function generate(source, dest, tileset, options, callback) {
@@ -185,12 +176,7 @@ function generate(source, dest, tileset, options, callback) {
     var columns = 0, rows = 0
     return tileset.load()
     .then(() => {
-        return new Promise((resolve, reject) => {
-            im.identify(source, (err, identity) => {
-                if (err) return reject(err)
-                resolve(identity)
-            })
-        })
+        return imp.identify(source)
     })
     .then((identity) => {
         columns = Math.round(identity.width / emojiSize)
@@ -262,14 +248,9 @@ function generate(source, dest, tileset, options, callback) {
         return Promise.all(tileRenders).then(renders => cmd)
     })
     .then(cmd => {
-        return new Promise((resolve, reject) => {
-            cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-            if (verbose) console.log(cmd)
-            im.convert(cmd, (err, md) => {
-                if (err) return reject(err)
-                resolve()
-            })
-        })
+        cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+        if (verbose) console.log(cmd)
+        return imp.convert(cmd)
     })
 }
 exports.generate = generate
