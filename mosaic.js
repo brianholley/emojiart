@@ -19,7 +19,7 @@ function resize(file, outFile, width, height, format) {
 
 function reduceImageToColor(imageFile) {
     let rgbaFile = path.join(os.tmpdir(), `1x1_${path.basename(imageFile)}.rgba`)
-    return resize(imageFile, rgbaFile, 1, 1, 'RGBA').then((path) => {
+    return resize(imageFile, rgbaFile, 1, 1, 'RGBA').then(path => {
         let bytes = fs.readFileSync(rgbaFile)
         let rgb = {
             red: normalize(bytes[0], bytes[3]),
@@ -51,10 +51,10 @@ class Tileset {
         let resized = path.join(this.cacheBase, files[i])
 
         //console.log(`File ${source}`)
-        return resize(source, resized, this.emojiSize, this.emojiSize, 'PNG24').then((thumb) => {
+        return resize(source, resized, this.emojiSize, this.emojiSize, 'PNG24').then(thumb => {
             //console.log(`Reduce image to color ${resized}`)
             return reduceImageToColor(resized)
-        }).then((color) => {
+        }).then(color => {
             //console.log(`${resized} = (${color.red}, ${color.green}, ${color.blue})`)
             colors[resized] = color
             if (i < files.length - 1) {
@@ -84,15 +84,14 @@ class Tileset {
         let colorTableFile = path.join(this.cacheBase, 'colors.json')
         return new Promise((resolve, reject) => {
             if (!fs.existsSync(colorTableFile)) {
-                this.generateColorTableAndCache(colorTableFile).then((colorTable) => {
+                this.generateColorTableAndCache(colorTableFile).then(colorTable => {
                     resolve(colorTable)
                 })
             }
             else {
                 resolve(JSON.parse(fs.readFileSync(colorTableFile)))
             }
-        })
-        .then((colorTable) => {
+        }).then(colorTable => {
             this.hslTable = {}
             for (var file in colorTable) {
                 var c = colorTable[file]
@@ -174,11 +173,9 @@ function generate(source, dest, tileset, options, callback) {
     var threshold = (options !== undefined && "threshold" in options ? options.threshold : 30)
     
     var columns = 0, rows = 0
-    return tileset.load()
-    .then(() => {
+    return tileset.load().then(() => {
         return imp.identify(source)
-    })
-    .then((identity) => {
+    }).then(identity => {
         columns = Math.round(identity.width / emojiSize)
         rows = Math.round(identity.height / emojiSize)
         
@@ -197,8 +194,7 @@ function generate(source, dest, tileset, options, callback) {
 
         let sourceRgbaFile = path.join(os.tmpdir(), uuid.v4() + '.rgba')
         return resize(source, sourceRgbaFile, columns, rows, 'RGBA')
-    })
-    .then((file) => {
+    }).then(file => {
         let bytes = fs.readFileSync(file)
         if (bytes.length != rows * columns * 4) {
             throw new Error(`Bad image size, expected: ${rows * columns * 4}, actual: ${bytes.length}`)
@@ -217,8 +213,7 @@ function generate(source, dest, tileset, options, callback) {
             throw new Error(`Bad emoji-map size, expected: ${rows * columns}, actual: ${emojis.length}`)
         }
         return emojis
-    })
-    .then((emojis) => {
+    }).then(emojis => {
         const tileSize = 10
 
         var cmd = [] 
@@ -246,8 +241,7 @@ function generate(source, dest, tileset, options, callback) {
             }
         }
         return Promise.all(tileRenders).then(renders => cmd)
-    })
-    .then(cmd => {
+    }).then(cmd => {
         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
         if (verbose) console.log(cmd)
         return imp.convert(cmd)

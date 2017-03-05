@@ -62,7 +62,7 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
     else {
         mosaic.generate(input, output, tileset, {emojiSize: emojiSize})
             .then(() => { console.log("Finished!") })
-            .catch((reason) => { console.log(reason) })
+            .catch(reason => { console.log(reason) })
     }
     return
 }
@@ -112,15 +112,13 @@ var bot = new TwitterReplyBot({
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
                 mosaic.generate(inputFile, outputFile, tileset, {
                     emojiSize: emojiSize
-                })
-                .then(() => {
+                }).then(() => {
                     console.log(`${tweet.id}: Emojification complete`)
                     
                     let text = '@' + tweet.user.screen_name
                     let altText = `Emojified art for @${tweet.user.screen_name}`
                     b.tweetReply(text, tweet.id, outputFile, altText)
-                })
-                .catch((reason) => {
+                }).catch(reason => {
                     console.log(`${tweet.id}: Failure: ${reason}`)
                 })
             })

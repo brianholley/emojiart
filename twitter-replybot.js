@@ -23,7 +23,7 @@ class TwitterReplyBot {
     }
 
     onTweet(tweet) {
-        if (tweet.entities.user_mentions.some((m) => { return m.screen_name == this.name })) {
+        if (tweet.entities.user_mentions.some(m => { return m.screen_name == this.name })) {
             this.onMentioned(this, tweet)
         }
     }
