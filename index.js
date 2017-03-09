@@ -54,7 +54,7 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize})
+            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize, verbose: true})
         })
         .then(() => { console.log("Finished!") })
         .catch(reason => { console.log(reason) })
@@ -158,7 +158,7 @@ recentTweets(bot).then(state => {
             let iotd = path.join(os.tmpdir(), `source.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             console.log(`Generating mosaic`)
-            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize})
+            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verbose: true})
         }).then(() => { 
             console.log(`Mosaic complete`)
             
