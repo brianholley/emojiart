@@ -168,12 +168,14 @@ function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
 
 function generate(source, dest, tileset, options, callback) {
     var verbose = (options !== undefined && "verbose" in options ? options.verbose : false)
+    var verboseEx = (options !== undefined && "verboseEx" in options ? options.verboseEx : false)
     var emojiSize = (options !== undefined && "size" in options ? options.size : 16)
     var maxMosaicSize = (options !== undefined && "maxMosaicSize" in options ? options.maxMosaicSize : 200)
     var threshold = (options !== undefined && "threshold" in options ? options.threshold : 30)
     
     var columns = 0, rows = 0
     return tileset.load().then(() => {
+        if (verbose) console.log(`Tileset loaded`)
         return imp.identify(source)
     }).then(identity => {
         columns = Math.round(identity.width / emojiSize)
@@ -206,7 +208,7 @@ function generate(source, dest, tileset, options, callback) {
                 green: normalize(bytes[p*4+1], bytes[p*4+3]),
                 blue: normalize(bytes[p*4+2], bytes[p*4+3]),
             }
-            if (verbose) console.log("Target pixel rgb: " + JSON.stringify(rgb))
+            if (verboseEx) console.log("Target pixel rgb: " + JSON.stringify(rgb))
             emojis.push(tileset.findTileForPixel(rgb, threshold))
         }
         if (emojis.length != rows * columns) {
@@ -234,7 +236,7 @@ function generate(source, dest, tileset, options, callback) {
                 let render = renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName)
                 tileRenders = [...tileRenders, render]
                 
-                if (verbose) console.log("Tile: " + c + "," + r)
+                if (verboseEx) console.log("Tile: " + c + "," + r)
 
                 let offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
                 cmd = [...cmd, '-page', offset, tileName]
@@ -243,7 +245,7 @@ function generate(source, dest, tileset, options, callback) {
         return Promise.all(tileRenders).then(renders => cmd)
     }).then(cmd => {
         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
-        if (verbose) console.log(cmd)
+        if (verboseEx) console.log(cmd)
         return imp.convert(cmd)
     })
 }
