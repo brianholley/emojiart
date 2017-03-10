@@ -152,7 +152,7 @@ class Tileset {
 
 exports.Tileset = Tileset
 
-function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
+function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest, options) {
     var cmd = []
     for (var r=0; r < rows; r++) {
         for (var c=0; c < columns; c++) {
@@ -163,16 +163,33 @@ function renderTile(columns, rows, start, rowOffset, emojis, emojiSize, dest) {
     }
 
     cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
+    if (options.verboseEx) console.log(cmd)
     return imp.convert(cmd)
 }
 
-function generate(source, dest, tileset, options, callback) {
-    var verbose = (options !== undefined && "verbose" in options ? options.verbose : false)
-    var verboseEx = (options !== undefined && "verboseEx" in options ? options.verboseEx : false)
-    var emojiSize = (options !== undefined && "size" in options ? options.size : 16)
-    var maxMosaicSize = (options !== undefined && "maxMosaicSize" in options ? options.maxMosaicSize : 200)
-    var threshold = (options !== undefined && "threshold" in options ? options.threshold : 30)
+function standardizeOptions(options) {
+    if (typeof options === 'undefined')
+        options = { }
+
+    let optionOrDefault = (opt, def) => (typeof opt !== 'undefined' ? opt : def)
+
+    options.verbose = optionOrDefault(options.verbose, false)
+    options.verboseEx = optionOrDefault(options.verboseEx, false)
+    options.size = optionOrDefault(options.size, 16)
+    options.maxMosaicSize = optionOrDefault(options.maxMosaicSize, 200)
+    options.threshold = optionOrDefault(options.threshold, 30)
     
+    return options
+}
+
+function generate(source, dest, tileset, options, callback) {
+    options = standardizeOptions(options)
+    let verbose = options.verbose
+    let verboseEx = options.verboseEx
+    let emojiSize = options.size
+    let maxMosaicSize = options.maxMosaicSize
+    let threshold = options.threshold
+
     var columns = 0, rows = 0
     return tileset.load().then(() => {
         if (verbose) console.log(`Tileset loaded`)
@@ -186,12 +203,12 @@ function generate(source, dest, tileset, options, callback) {
         if (columns > rows && columns > maxMosaicSize) {
             columns = maxMosaicSize
             rows = Math.floor(identity.height / identity.width * columns)
-            if (verbose) console.log("Snapped to " + columns + "x" + rows)
+            if (verbose) console.log(`Snapped to ${columns}x${rows}`)
         }
         else if (rows > columns && rows > maxMosaicSize) {
             rows = maxMosaicSize
             columns = Math.floor(identity.width / identity.height * rows)
-            if (verbose) console.log("Snapped to " + columns + "x" + rows)
+            if (verbose) console.log(`Snapped to ${columns}x${rows}`)
         }
 
         let sourceRgbaFile = path.join(os.tmpdir(), uuid.v4() + '.rgba')
@@ -221,29 +238,31 @@ function generate(source, dest, tileset, options, callback) {
         var cmd = [] 
         var ctiles = Math.ceil(columns / tileSize) 
         var rtiles = Math.ceil(rows / tileSize)
-        if (verbose) console.log("Tile size: " + ctiles + "x" + rtiles)
+        if (verbose) console.log(`Tile size: ${ctiles}x${rtiles}`)
         
         var tempFolder = path.join(os.tmpdir(), '' + uuid.v4()) 
+        if (verboseEx) console.log(`Tile render location: ${tempFolder}`)
         fs.mkdirSync(tempFolder)
 
         var tileRenders = []
         for (var r=0; r < rtiles; r++) {
             for (var c=0; c < ctiles; c++) {
+                if (verboseEx) console.log(`Tile: ${c},${r}`)
+
                 let tileBase = c * tileSize + r * tileSize * columns
-                let tileName = tempFolder + '/tile_' + c + '_' + r + '.png'
+                let tileName = `${tempFolder}/tile_${c}_${r}.png`
                 let tileW = (c < ctiles - 1 ? tileSize : columns - c * tileSize) 
                 let tileH = (r < rtiles - 1 ? tileSize : rows - r * tileSize)
-                let render = renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName)
+                let render = renderTile(tileW, tileH, tileBase, columns, emojis, emojiSize, tileName, options)
                 tileRenders = [...tileRenders, render]
                 
-                if (verboseEx) console.log("Tile: " + c + "," + r)
-
                 let offset = '+' + (tileSize * emojiSize * c) + '+' + (tileSize * emojiSize * r)
                 cmd = [...cmd, '-page', offset, tileName]
             }
         }
         return Promise.all(tileRenders).then(renders => cmd)
     }).then(cmd => {
+        if (verbose) console.log("All tiles rendered")
         cmd = [...cmd, '-background', 'white', '-layers', 'mosaic', dest]
         if (verboseEx) console.log(cmd)
         return imp.convert(cmd)
