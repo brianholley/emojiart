@@ -184,7 +184,7 @@ function standardizeOptions(options) {
 
 function generate(source, dest, tileset, options, callback) {
     options = standardizeOptions(options)
-    let verbose = options.verbose
+    let verbose = options.verbose || options.verboseEx
     let verboseEx = options.verboseEx
     let emojiSize = options.size
     let maxMosaicSize = options.maxMosaicSize
