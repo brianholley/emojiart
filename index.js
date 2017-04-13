@@ -113,7 +113,8 @@ var bot = new TwitterReplyBot({
                 
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
                 mosaic.generate(inputFile, outputFile, tileset, {
-                    emojiSize: emojiSize
+                    emojiSize: emojiSize,
+                    verboseEx: true
                 }).then(() => {
                     console.log(`${tweet.id}: Emojification complete`)
                     
@@ -160,7 +161,7 @@ recentTweets(bot).then(state => {
             let iotd = path.join(os.tmpdir(), `source.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
             console.log(`Generating mosaic`)
-            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verbose: true})
+            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verboseEx: true})
         }).then(() => { 
             console.log(`Mosaic complete`)
             
