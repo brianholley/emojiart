@@ -71,9 +71,10 @@ let recentTweets = (bot) => {
     return new Promise((resolve, reject) => {
         bot.twit.get('statuses/user_timeline', { count: 20 }, (err, data, response) => {
             let tweets = data.map(t => { 
+                let url = t.entities.urls.length > 0 ? t.entities.urls[0].expanded_url : t.entities.media[0].expanded_url
                 return { 
                     date: new Date(t.created_at),
-                    url: t.entities.urls[0].expanded_url
+                    url: url
                 }
             }).reduce((acc, val) => { 
                 acc[val.url] = val.date 
@@ -99,6 +100,7 @@ var bot = new TwitterReplyBot({
     access_token_secret:  process.env.TWITTER_ACCESS_TOKEN_SECRET,
     onMentioned: (b, tweet) => {
         console.log(`${tweet.id}: Mention by ${tweet.user.screen_name}`)
+        console.log(tweet)
         let pictures = picturesInTweet(tweet)
 
         if (pictures.length > 0) {
