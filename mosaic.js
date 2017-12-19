@@ -69,6 +69,7 @@ class Tileset {
         let files = fs.readdirSync(this.folder)
         return this.colorTableRecurse(0, files, colors).then(() => {
             fs.writeFileSync(colorTableFile, JSON.stringify(colors))
+            return colors
         })
     }
 
@@ -84,6 +85,7 @@ class Tileset {
         let colorTableFile = path.join(this.cacheBase, 'colors.json')
         return new Promise((resolve, reject) => {
             if (!fs.existsSync(colorTableFile)) {
+                console.log(`Generating new color table file at ${colorTableFile}`)
                 this.generateColorTableAndCache(colorTableFile).then(colorTable => {
                     resolve(colorTable)
                 })
