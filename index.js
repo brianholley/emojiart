@@ -49,6 +49,7 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
     let source = sources.find(s => s.name == input);
     if (source !== undefined) {
         source.action().then(imageInfo => {
+            console.log(`Image url: ${imageInfo.imageUrl}`)
             return downloadImage(imageInfo)
         }).then(image => {
             let ext = mime.extension(image.contentType)
