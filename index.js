@@ -115,7 +115,7 @@ var bot = new TwitterReplyBot({
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
                 mosaic.generate(inputFile, outputFile, tileset, {
                     emojiSize: emojiSize,
-                    verboseEx: true
+                    verbose: true
                 }).then(() => {
                     console.log(`${tweet.id}: Emojification complete`)
                     
@@ -130,6 +130,49 @@ var bot = new TwitterReplyBot({
     }
 })
 
+function tweetRandomImage(state) {
+    let source = Math.floor(Math.random() * sources.length)
+
+    let name = sources[source].name
+    let now = new Date()
+    console.log(`========================================`)
+    console.log(`Waking up at ${now}, checking ${name}`)
+    
+    var url = ''
+    var outputFile = path.join(os.tmpdir(), 'emoji.png')
+    sources[source].action().then(imageInfo => {
+        console.log(`Image found`)
+        console.log(`${imageInfo.imageUrl}`)
+        if (imageInfo.imageUrl in state) {
+            return new Promise((resolve, reject) => reject('Image already complete - skipped'))
+        }
+        console.log(`Downloading`)
+        return downloadImage(imageInfo)
+    }).then(image => {
+        console.log(`Downloaded`)
+        url = image.imageUrl
+        let ext = mime.extension(image.contentType)
+        let iotd = path.join(os.tmpdir(), `source.${ext}`)
+        fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
+        console.log(`Generating mosaic`)
+        return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verbose: true})
+    }).then(() => { 
+        console.log(`Mosaic complete`)
+        
+        let text = `${name} image of the day #emojified (source:${url})`
+        console.log(`Tweeting`)
+        return bot.tweetReply(text, 0, outputFile, text)
+    }).then(() => {
+        console.log("Finished!") 
+        state[url] = new Date()
+        console.log("Back to sleep")
+    }).catch(reason => {
+        console.log("Error during emojification:") 
+        console.log(reason)
+        console.log("Back to sleep") 
+    })
+}
+
 recentTweets(bot).then(state => {
     bot.start()
 
@@ -137,48 +180,10 @@ recentTweets(bot).then(state => {
     rule.hour = new schedule.Range(0, 23)
     rule.minute = 0
     console.log("Starting background job...")
-    schedule.scheduleJob(rule, () => {
-        let source = Math.floor(Math.random() * sources.length)
+    schedule.scheduleJob(rule, () => tweetRandomImage(state))
 
-        let name = sources[source].name
-        let now = new Date()
-        console.log(`========================================`)
-        console.log(`Waking up at ${now}, checking ${name}`)
-        
-        var url = ''
-        var outputFile = path.join(os.tmpdir(), 'emoji.png')
-        sources[source].action().then(imageInfo => {
-            console.log(`Image found`)
-            console.log(`${imageInfo.imageUrl}`)
-            if (imageInfo.imageUrl in state) {
-                return new Promise((resolve, reject) => reject('Image already complete - skipped'))
-            }
-            console.log(`Downloading`)
-            return downloadImage(imageInfo)
-        }).then(image => {
-            console.log(`Downloaded`)
-            url = image.imageUrl
-            let ext = mime.extension(image.contentType)
-            let iotd = path.join(os.tmpdir(), `source.${ext}`)
-            fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            console.log(`Generating mosaic`)
-            return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verboseEx: true})
-        }).then(() => { 
-            console.log(`Mosaic complete`)
-            
-            let text = `${name} image of the day #emojified (source:${url})`
-            console.log(`Tweeting`)
-            return bot.tweetReply(text, 0, outputFile, text)
-        }).then(() => {
-            console.log("Finished!") 
-            state[url] = new Date()
-            console.log("Back to sleep")
-        }).catch(reason => {
-            console.log("Error during emojification:") 
-            console.log(reason)
-            console.log("Back to sleep") 
-        })
-    })
+    console.log("Running initial instance...")
+    tweetRandomImage(state)
 })
 
 // bot.onMentioned(bot, {
