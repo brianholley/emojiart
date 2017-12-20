@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: emojiart
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: emojiart
+    spec:
+      containers:
+      - name: emojiart
+        image: wavecrashcontainers.azurecr.io/emojiart:latest
+        envFrom:
+          secretRef:
+            name: emojiart-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emojiart
+spec:
+  ports:
+  - port: 8080
+  selector:
+    app: emojiart

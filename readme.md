@@ -44,8 +44,51 @@ npm test <service> <out_file>
 -   **Wikipedia** Picture of the day
 
 
+## Container deployment
+
+The emojiart twitterbot can be deployed to a Docker host or Kubernetes cluster via a few easy commands.
+
+**Docker**
+
+Create a ```docker.env``` file containing your access keys:
+```
+TWITTER_CONSUMER_KEY=...
+TWITTER_CONSUMER_SECRET=...
+TWITTER_ACCESS_TOKEN=...
+TWITTER_ACCESS_TOKEN_SECRET=...
+NASA_API_KEY=...
+```
+Then you can easily build and run your container:
+```
+docker build -t emojiart .
+docker run --env-file docker.env -d emojiart 
+```
+
+**Kubernetes**
+
+Create a ```secrets.yaml``` file containing your access keys:
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: emojiart-secrets
+type: Opaque
+data:
+  TWITTER_CONSUMER_KEY: ...
+  TWITTER_CONSUMER_SECRET: ...
+  TWITTER_ACCESS_TOKEN: ...
+  TWITTER_ACCESS_TOKEN_SECRET: ...
+  NASA_API_KEY: ...
+```
+Then you can easily build and deploy your container:
+```
+kubectl config use-context prod
+kubectl create -f secrets.yaml
+
+docker build -t emojiart .
+kubectl create -f emojiart.yaml
+```
+
 ## Image attribution
  
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Emoji provided free by [EmojiOne](http://emojione.com)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-   Emoji provided free by [EmojiOne](http://emojione.com)

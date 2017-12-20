@@ -1,4 +1,8 @@
+# Docker secrets
 docker.env
+
+# Kubernetes secrets
+secrets.yaml
 
 cache
 out
