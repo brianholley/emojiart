@@ -32,12 +32,18 @@ class TwitterReplyBot {
         return new Promise((resolve, reject) => {
             var b64content = fs.readFileSync(filepath, { encoding: 'base64' })
             this.twit.post('media/upload', { media_data: b64content }, (err, data, response) => {
-                if (err) return reject(err)
+                if (err) {
+                    console.log(`Image upload error: ${b64content.length}`)
+                    return reject(err)
+                }
                 var mediaIdStr = data.media_id_string
                 var meta_params = { media_id: mediaIdStr, alt_text: { text: altText } }
 
                 this.twit.post('media/metadata/create', meta_params, (err, data, response) => {
-                    if (err) return reject(err)
+                    if (err) {
+                        console.log(`Media creation error: ${$mediaIdStr}`)
+                        return reject(err)
+                    }
                     var params = { 
                         status: text,
                         in_reply_to_status_id: replyToId, 
