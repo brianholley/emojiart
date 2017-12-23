@@ -4,20 +4,19 @@ var schedule = require('node-schedule')
 var os = require('os')
 var path = require('path')
 var rp = require('request-promise-native')
+var mosaick = require('imagemosaick')
 require('use-strict')
 
 var Bing = require('./bing-iotd')
 var Flickr = require('./flickr-iotd')
-var mosaic = require('./mosaic')
 var Nasa = require('./nasa-iotd')
 var NatGeo = require('./natgeo-potd')
 var TwitterReplyBot = require('./twitter-replybot')
 var Wikipedia = require('./wikipedia-potd')
 
 const emojiSize = 16
-var tileset = new mosaic.Tileset(
+var tileset = new mosaick.Tileset(
     path.join('.', 'emojis', 'e1-png', 'png_512'),
-    path.join(os.homedir(), 'emojis'),
     emojiSize)
 
 let sources = [ 
@@ -55,13 +54,13 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaic.generate(iotd, output, tileset, {emojiSize: emojiSize, verbose: true})
+            return mosaick.generate(iotd, output, tileset, {verbose: true})
         })
         .then(() => { console.log("Finished!") })
         .catch(reason => { console.log(reason) })
     } 
     else {
-        mosaic.generate(input, output, tileset, {emojiSize: emojiSize})
+        mosaick.generate(input, output, tileset, {})
             .then(() => { console.log("Finished!") })
             .catch(reason => { console.log(reason) })
     }
@@ -113,8 +112,7 @@ var bot = new TwitterReplyBot({
                 fs.writeFileSync(inputFile, response.body, {encoding: 'binary'})
                 
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
-                mosaic.generate(inputFile, outputFile, tileset, {
-                    emojiSize: emojiSize,
+                mosaick.generate(inputFile, outputFile, tileset, {
                     verbose: true
                 }).then(() => {
                     console.log(`${tweet.id}: Emojification complete`)
@@ -155,7 +153,7 @@ function tweetRandomImage(state) {
         let iotd = path.join(os.tmpdir(), `source.${ext}`)
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
         console.log(`Generating mosaic`)
-        return mosaic.generate(iotd, outputFile, tileset, {emojiSize: emojiSize, verbose: true})
+        return mosaick.generate(iotd, outputFile, tileset, {verbose: true})
     }).then(() => { 
         console.log(`Mosaic complete`)
         
@@ -185,14 +183,3 @@ recentTweets(bot).then(state => {
     console.log("Running initial instance...")
     tweetRandomImage(state)
 })
-
-// bot.onMentioned(bot, {
-//     id: 123456789,
-//     user: { screen_name: "mock" },
-//     entities: { 
-//         media: [{
-//             type: "photo",
-//             media_url_https: "http://mtv.mtvnimages.com/uri/mgid:file:http:shared:public.articles.mtv.com/wp-content/uploads/2014/08/2001-a-space-odyssey.jpg?width=480&quality=0.85&maxdimension=2000"
-//         }]
-//     }
-// })
