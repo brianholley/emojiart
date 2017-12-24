@@ -14,6 +14,7 @@ var NatGeo = require('./natgeo-potd')
 var TwitterReplyBot = require('./twitter-replybot')
 var Wikipedia = require('./wikipedia-potd')
 
+const hueThreshold = 10
 const emojiSize = 16
 var tileset = new mosaick.Tileset(
     path.join('.', 'emojis', 'e1-png', 'png_512'),
@@ -54,13 +55,13 @@ if (process.argv.length >= 5 && process.argv[2] == "test") {
             let ext = mime.extension(image.contentType)
             let iotd = path.join(os.tmpdir(), `bingiotd.${ext}`)
             fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
-            return mosaick.generate(iotd, output, tileset, {verbose: true})
+            return mosaick.generate(iotd, output, tileset, {verbose: true, threshold: hueThreshold})
         })
         .then(() => { console.log("Finished!") })
         .catch(reason => { console.log(reason) })
     } 
     else {
-        mosaick.generate(input, output, tileset, {})
+        mosaick.generate(input, output, tileset, { threshold: hueThreshold })
             .then(() => { console.log("Finished!") })
             .catch(reason => { console.log(reason) })
     }
@@ -113,7 +114,8 @@ var bot = new TwitterReplyBot({
                 
                 let outputFile = path.join(os.tmpdir(), `tweet_${tweet.id}_emoji.png`)
                 mosaick.generate(inputFile, outputFile, tileset, {
-                    verbose: true
+                    verbose: true,
+                    threshold: hueThreshold
                 }).then(() => {
                     console.log(`${tweet.id}: Emojification complete`)
                     
@@ -153,7 +155,7 @@ function tweetRandomImage(state) {
         let iotd = path.join(os.tmpdir(), `source.${ext}`)
         fs.writeFileSync(iotd, image.imageData, {encoding: 'binary'})
         console.log(`Generating mosaic`)
-        return mosaick.generate(iotd, outputFile, tileset, {verbose: true})
+        return mosaick.generate(iotd, outputFile, tileset, {verbose: true, threshold: hueThreshold})
     }).then(() => { 
         console.log(`Mosaic complete`)
         
