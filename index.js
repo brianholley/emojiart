@@ -12,6 +12,7 @@ var Flickr = require('./flickr-iotd')
 var Nasa = require('./nasa-iotd')
 var NatGeo = require('./natgeo-potd')
 var TwitterReplyBot = require('./twitter-replybot')
+var USRA = require('./usra-epod')
 var Wikipedia = require('./wikipedia-potd')
 
 const hueThreshold = 10
@@ -26,6 +27,7 @@ let sources = [
     {name: 'Wikipedia', action: () => Wikipedia.imageOfTheDay()}, 
     {name: 'Flickr', action: () => Flickr.imageOfTheDay()},
     {name: 'NatGeo', action: () => NatGeo.imageOfTheDay()},
+    {name: 'USRA', action: () => USRA.imageOfTheDay()},
 ]
 
 function downloadImage(imageInfo) {
