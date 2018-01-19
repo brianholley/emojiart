@@ -11,9 +11,9 @@ spec:
     spec:
       containers:
       - name: emojiart
-        image: wavecrashcontainers.azurecr.io/emojiart:latest
+        image: <container registry image>
         envFrom:
-          secretRef:
+        - secretRef:
             name: emojiart-secrets
 ---
 apiVersion: v1

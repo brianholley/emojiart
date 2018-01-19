@@ -67,6 +67,11 @@ docker run --env-file docker.env -d emojiart
 
 **Kubernetes**
 
+Update the image path in the ```emojiart.yaml``` file to point to your built container.
+```
+image: <container registry image>
+```
+
 Create a ```secrets.yaml``` file containing your access keys:
 ```
 apiVersion: v1
