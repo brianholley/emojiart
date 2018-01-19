@@ -42,6 +42,7 @@ npm test <service> <out_file>
 -   **Nasa** Astronomy picture of the day
 -   **NatGeo** (National Geographic) Photo of the day
 -   **Wikipedia** Picture of the day
+-   **USRA** USRA Earth science picture of the day
 
 
 ## Container deployment
