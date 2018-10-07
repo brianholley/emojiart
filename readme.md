@@ -67,12 +67,18 @@ docker run --env-file docker.env -d emojiart
 
 **Kubernetes**
 
-Update the image path in the ```emojiart.yaml``` file to point to your built container.
+Build and push your built container to dockerhub or your own private registry:
 ```
-image: <container registry image>
+docker build -t <registry>/emojiart:latest .
+docker push <registry>/emojiart:latest
 ```
 
-Create a ```secrets.yaml``` file containing your access keys:
+Update the image path in the ```emojiart.yaml``` file to point to your built container.
+```
+image: <registry>/emojiart:latest
+```
+
+Create a ```secrets.yaml``` file containing your access keys (base-64 encoded):
 ```
 apiVersion: v1
 kind: Secret
@@ -86,12 +92,9 @@ data:
   TWITTER_ACCESS_TOKEN_SECRET: ...
   NASA_API_KEY: ...
 ```
-Then you can easily build and deploy your container:
+Then you can easily build and deploy your service into the cluster:
 ```
-kubectl config use-context prod
 kubectl create -f secrets.yaml
-
-docker build -t emojiart .
 kubectl create -f emojiart.yaml
 ```
 

@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: emojiart
-        image: <container registry image>
+        image: <registry>/emojiart:latest
         envFrom:
         - secretRef:
             name: emojiart-secrets
